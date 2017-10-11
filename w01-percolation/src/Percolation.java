@@ -4,15 +4,26 @@ import edu.princeton.cs.algs4.WeightedQuickUnionUF;
 
 public class Percolation {
     
+    private static enum Cell {CLOSED, EMPTY, FULL}
     private WeightedQuickUnionUF uf;
-    private boolean[][] open;
+    private final Cell[][] field;
+    
+    private final int N;
     
     public Percolation(int n) 
     {
         // create n-by-n grid, with all sites blocked
         if (n<=0) throw new IllegalArgumentException("Invalid input: n must be > 0");
-        uf = new WeightedQuickUnionUF(n*n);
-        open = new boolean[n][n];
+        this.N = n;
+        uf = new WeightedQuickUnionUF(n*n+2);
+        grid = new field[this.N*this.N];
+        for (int i = 0; i < this.N; ++i)
+        {
+            for (int j = 0; j < this.N; ++j)
+            {
+                field[i][j] = Cell.CLOSED;
+            }
+        }
     }
     
     public void isValid(int row, int col)
@@ -25,9 +36,8 @@ public class Percolation {
     
     public void open(int row, int col) // open site (row, col) if it is not open already
     {
-        isValid(row, col);
         if (isOpen(row,col)) return;
-        open[row][col] = 1;
+        field[row][col] = 'EMPTY';
         openAdjacent(row,col);
     }
     
@@ -48,7 +58,7 @@ public class Percolation {
     public boolean isOpen(int row, int col) // is site (row, col) open?
     {
         isValid(row, col);
-        return this.open[row][col] > 0;
+        return this.field[row][col] <> 'CLOSED';
     }
     
     public boolean isFull(int row, int col) // is site (row, col) full?
