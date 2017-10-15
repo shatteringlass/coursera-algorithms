@@ -1,83 +1,103 @@
-import edu.princeton.cs.algs4.StdRandom;
-import edu.princeton.cs.algs4.StdStats;
+/**
+ * Created by SkyAo on 2017/1/9.
+ */
+
 import edu.princeton.cs.algs4.WeightedQuickUnionUF;
+import edu.princeton.cs.algs4.StdIn;
+import edu.princeton.cs.algs4.StdOut;
 
 public class Percolation {
-    
-    private static enum Cell {CLOSED, EMPTY, FULL}
     private WeightedQuickUnionUF uf;
-    private final Cell[][] field;
-    
-    private final int N;
-    
-    public Percolation(int n) 
-    {
-        // create n-by-n grid, with all sites blocked
-        if (n<=0) throw new IllegalArgumentException("Invalid input: n must be > 0");
-        this.N = n;
-        uf = new WeightedQuickUnionUF(n*n+2);
-        grid = new field[this.N*this.N];
-        for (int i = 0; i < this.N; ++i)
-        {
-            for (int j = 0; j < this.N; ++j)
-            {
-                field[i][j] = Cell.CLOSED;
-            }
+    private WeightedQuickUnionUF backwashChecked;
+    private int gridSize;
+    private final int startPoint;
+    private final int endPoint;
+    private boolean[][] sites;
+    private int openSiteNumber;
+
+    public Percolation(int n) {
+        if (n <= 0) throw new IllegalArgumentException();
+        uf = new WeightedQuickUnionUF(n * n + 2);
+        backwashChecked = new WeightedQuickUnionUF(n * n + 1);
+
+        sites = new boolean[n][n];
+        openSiteNumber = 0;
+
+        startPoint = 0;
+        endPoint = n * n + 1;
+        gridSize = n;
+    }
+
+    private int getFlattenId(int row, int col) {
+        if (row < 1 || row > gridSize || col < 1 || col > gridSize) throw new IndexOutOfBoundsException();
+        return (row - 1) * gridSize + col;
+    }
+
+    public void open(int row, int col) {
+        if (row < 1 || row > gridSize || col < 1 || col > gridSize) throw new IndexOutOfBoundsException();
+        if (isOpen(row, col)) return;
+
+        sites[row - 1][col - 1] = true;
+        openSiteNumber++;
+
+        if (row == 1) {
+            uf.union(getFlattenId(row, col), startPoint);
+            backwashChecked.union(getFlattenId(row, col), startPoint);
+        }
+
+        if (row == gridSize) {
+            uf.union(getFlattenId(row, col), endPoint);
+        }
+
+        if (row > 1 && isOpen(row - 1, col)) {
+            uf.union(getFlattenId(row - 1, col), getFlattenId(row, col));
+            backwashChecked.union(getFlattenId(row - 1, col), getFlattenId(row, col));
+        }
+
+        if (row < gridSize && isOpen(row + 1, col)) {
+            uf.union(getFlattenId(row + 1, col), getFlattenId(row, col));
+            backwashChecked.union(getFlattenId(row + 1, col), getFlattenId(row, col));
+        }
+
+        if (col > 1 && isOpen(row, col - 1)) {
+            uf.union(getFlattenId(row, col - 1), getFlattenId(row, col));
+            backwashChecked.union(getFlattenId(row, col - 1), getFlattenId(row, col));
+        }
+
+        if (col < gridSize && isOpen(row, col + 1)) {
+            uf.union(getFlattenId(row, col + 1), getFlattenId(row, col));
+            backwashChecked.union(getFlattenId(row, col + 1), getFlattenId(row, col));
         }
     }
-    
-    public void isValid(int row, int col)
-    {
-        if ( (row <= 0 || row >= n) || (col <= 0 || col >= n) )
-        {
-            throw new IndexOutOfBoundsException();
+
+    public boolean isOpen(int row, int col) {
+        if (row < 1 || row > gridSize || col < 1 || col > gridSize) throw new IndexOutOfBoundsException();
+        return sites[row - 1][col - 1];
+    }
+
+    public boolean isFull(int row, int col) {
+        if (row < 1 || row > gridSize || col < 1 || col > gridSize) throw new IndexOutOfBoundsException();
+        return backwashChecked.connected(getFlattenId(row, col), startPoint);
+    }
+
+    public int numberOfOpenSites() {
+        return openSiteNumber;
+    }
+
+    public boolean percolates() {
+        return numberOfOpenSites() > 0 && uf.connected(startPoint, endPoint);
+    }
+
+    public static void main(String[] args) {
+        int gridSize = StdIn.readInt();
+        int row, col, temp;
+        Percolation percolation = new Percolation(gridSize);
+        while (!StdIn.isEmpty()) {
+            row = StdIn.readInt();
+            col = StdIn.readInt();
+            percolation.open(row, col);
         }
-    }
-    
-    public void open(int row, int col) // open site (row, col) if it is not open already
-    {
-        if (isOpen(row,col)) return;
-        field[row][col] = 'EMPTY';
-        openAdjacent(row,col);
-    }
-    
-    
-    public int[][] getOpenAdjacent(int row, int col)
-    {
-        
-    }
-    
-    public void openAdjacent(int row, int col)
-    {
-        colLeft;
-        colRight;
-        rowTop;
-        rowBottom;
-    }
-    
-    public boolean isOpen(int row, int col) // is site (row, col) open?
-    {
-        isValid(row, col);
-        return this.field[row][col] <> 'CLOSED';
-    }
-    
-    public boolean isFull(int row, int col) // is site (row, col) full?
-    {
-        
-    }
-    
-    public int numberOfOpenSites() // number of open sites
-    {
-        
-    }
-    
-    public boolean percolates() // does the system percolate?
-    {
-        
-    }
-    
-    public static void main(String[] args) // test client (optional)
-    {
-        
+
+        StdOut.print(percolation.percolates());
     }
 }
